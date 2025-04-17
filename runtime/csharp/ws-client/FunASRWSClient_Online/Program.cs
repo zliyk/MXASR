@@ -38,7 +38,7 @@ namespace FunASRWSClient_Online
         [STAThread]
         public void FunASR_Main()
         {
-            loadconfig();
+ 
             //麦克风状态监测
             string errorStatus = string.Empty;
             if (GetCurrentMicVolume() == -2)
@@ -89,32 +89,7 @@ namespace FunASRWSClient_Online
                 }
             }
         }
-        private void loadconfig()
-        {
-            string filePath = "config.ini";
-            NameValueCollection settings = new NameValueCollection();
-            using (StreamReader reader = new StreamReader(filePath))
-            {
-                string line;
-                while ((line = reader.ReadLine()) != null)
-                {
-                    // 忽略空行和注释
-                    if (string.IsNullOrEmpty(line) || line.StartsWith(";") || line.StartsWith("#"))
-                        continue;
-                    // 解析键值对
-                    int equalsIndex = line.IndexOf('=');
-                    if (equalsIndex > 0)
-                    {
-                        string key = line.Substring(0, equalsIndex).Trim();
-                        string value = line.Substring(equalsIndex + 1).Trim();
-                        if (key == "host")
-                            host = value;
-                        else if (key == "port")
-                            port = value;
-                    }
-                }
-            }
-        }
+        
         private void OnlineASR(string str)
         {
             if (!string.IsNullOrEmpty(str))

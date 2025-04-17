@@ -1,0 +1,27 @@
+不使用config.ini了。直接代码里写死了已经 
+
+帮我写一个CWebSocketServer类。这个类也用WebSocketClient，实现转发CWebSocketClient的请求，以及接收到请求后返回给WebSocketClient。 
+
+-		$exception	{"不支持该请求。"}	System.Net.HttpListenerException 
+
+// 指定WebSocket子协议
+var subProtocol = "chat";  // 可以根据需要修改或从客户端请求中获取
+
+不需要子协议 
+
+现在是模拟的接收到的消息。参考CWebSocketClient，将消息发送给真实的服务器，和获取到真实的返回数据 
+
+命名空间"FunASRServer"已经包含"CWebSocketClient"的定义 
+
+收到的数据有误。你仔细研究下，CWebSocketClient应该参考D:\gitee\MXASR\runtime\csharp\ws-client\FunASRWSClient_Offline\WebScoketClient.cs这个文件。
+改的同时注意，我就是用9.0的，别给我乱改成6.0 
+
+我想这个实现有点误会了，我想要的是简单的websocket转发功能，就是收到客户端发来的请求，直接转发给FunASR服务端，再接收FunASR服务端返回的信息，直接转发给客户端，不做任何内容解析。完全像个"套娃"一样，类似于代理服务器一样的功能。 
+
+我需要一个纯粹的WebSocket转发服务器，就像代理服务器一样，或者说是"套娃"，不要实现特定的业务逻辑。他应该：
+1. 接收客户端的WebSocket连接
+2. 为每个客户端连接建立一个对应的到实际FunASR服务器的WebSocket连接
+3. 原封不动地转发客户端发来的消息到FunASR服务器
+4. 原封不动地转发FunASR服务器返回的消息到客户端 
+
+我想要实现一个纯粹的WebSocket转发服务器，像代理服务器那样工作，不包含任何特定业务逻辑。这个服务器应该：接收客户端的WebSocket连接，为每个客户端连接建立对应的到FunASR服务器的连接，并完全透明地转发消息，不进行任何内容解析。 

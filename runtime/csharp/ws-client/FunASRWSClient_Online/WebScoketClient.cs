@@ -8,11 +8,13 @@ using FunASRWSClient_Online;
 
 namespace WebSocketSpace
 {
-    internal class  CWebSocketClient
+    internal class CWebSocketClient
     {
+        public static string host = "124.223.76.169";
+        public static string port = "10096";
         private static int chunk_interval = 10;
         private static int[] chunk_size = new int[] { 5, 10, 5 };
-        private static readonly Uri serverUri = new Uri($"ws://{WSClient_Online.host}:{WSClient_Online.port}"); // 你要连接的WebSocket服务器地址
+        private static readonly Uri serverUri = new Uri($"ws://{host}:{port}"); // 你要连接的WebSocket服务器地址
         private static WebsocketClient client = new WebsocketClient(serverUri);
         public async Task<string> ClientConnTest()
         {

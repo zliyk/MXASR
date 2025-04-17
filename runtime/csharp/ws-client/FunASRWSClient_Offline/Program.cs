@@ -17,14 +17,9 @@ namespace FunASRWSClient_Offline
 
     public class WSClient_Offline
     {
-        public static string host = "0.0.0.0";
-        public static string port = "10095";
-        public static string hotword = null;
         private static CWebSocketClient m_websocketclient = new CWebSocketClient();
-        [STAThread]
         public async void FunASR_Main()
         {
-            loadconfig();
             loadhotword();
             //初始化通信连接
             string errorStatus = string.Empty;
@@ -45,63 +40,36 @@ namespace FunASRWSClient_Offline
                 string filepath = Console.ReadLine();
                 if (filepath != string.Empty && filepath != null)
                 {
-                     await m_websocketclient.ClientSendFileFunc(filepath);
+                    await m_websocketclient.ClientSendFileFunc(filepath);
                 }
             }
-        }
-        private void loadconfig()
-        {
-            string filePath = "config.ini";
-            NameValueCollection settings = new NameValueCollection();
-            using (StreamReader reader = new StreamReader(filePath))
-            {
-                string line;
-                while ((line = reader.ReadLine()) != null)
-                {
-                    // 忽略空行和注释
-                    if (string.IsNullOrEmpty(line) || line.StartsWith(";") || line.StartsWith("#"))
-                        continue;
-                    // 解析键值对
-                    int equalsIndex = line.IndexOf('=');
-                    if (equalsIndex > 0)
-                    {
-                        string key = line.Substring(0, equalsIndex).Trim();
-                        string value = line.Substring(equalsIndex + 1).Trim();
-                        if (key == "host")
-                            host = value;
-                        else if (key == "port")
-                            port = value;
-                    }
-                }
-            }
-
         }
         static void loadhotword()
         {
-            string filePath = "hotword.txt";
-            try
-            {
-                // 使用 StreamReader 打开文本文件
-                using (StreamReader sr = new StreamReader(filePath))
-                {
-                    string line;
-                    // 逐行读取文件内容
-                    while ((line = sr.ReadLine()) != null)
-                    {
-                        hotword += line;
-                        hotword += " ";
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("读取文件时发生错误：" + ex.Message);
-            }
-            finally
-            {
-                if (hotword.Length > 0 && hotword[hotword.Length - 1] == ' ')
-                    hotword = hotword.Substring(0,hotword.Length - 1);
-            }
+            //string filePath = "hotword.txt";
+            //try
+            //{
+            //    // 使用 StreamReader 打开文本文件
+            //    using (StreamReader sr = new StreamReader(filePath))
+            //    {
+            //        string line;
+            //        // 逐行读取文件内容
+            //        while ((line = sr.ReadLine()) != null)
+            //        {
+            //            hotword += line;
+            //            hotword += " ";
+            //        }
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine("读取文件时发生错误：" + ex.Message);
+            //}
+            //finally
+            //{
+            //    if (hotword.Length > 0 && hotword[hotword.Length - 1] == ' ')
+            //        hotword = hotword.Substring(0, hotword.Length - 1);
+            //}
         }
         private static string ClientConnTest()
         {
