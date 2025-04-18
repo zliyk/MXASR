@@ -32,7 +32,7 @@ namespace FunASRServer
         /// 创建WebSocket代理服务器
         /// </summary>
         /// <param name="targetServerUrl">目标FunASR服务器的WebSocket地址</param>
-        public CWebSocketServer(string targetServerUrl = "ws://124.223.76.169:10095/")
+        public CWebSocketServer(string targetServerUrl = "ws://124.223.76.169:10096/")
         {
             _listener = new HttpListener();
             _cts = new CancellationTokenSource();
@@ -51,15 +51,51 @@ namespace FunASRServer
 
             try
             {
-                string url = $"http://{host}:{port}/ws/";
+                // 注意：修改URL前缀处理方式
+                string prefix;
+                if (host == "0.0.0.0")
+                {
+                    // 对于监听所有网络接口，使用"+"而不是"0.0.0.0"
+                    // 注意：需要管理员权限，或使用netsh添加URL ACL
+                    prefix = $"http://+:{port}/ws/";
+                    Console.WriteLine("注意：监听所有网络接口需要管理员权限！");
+                    Console.WriteLine("如果启动失败，请以管理员身份运行，或执行以下命令：");
+                    Console.WriteLine($"netsh http add urlacl url=http://+:{port}/ws/ user=Everyone");
+                }
+                else if (host == "*" || host == "+")
+                {
+                    prefix = $"http://+:{port}/ws/";
+                    Console.WriteLine("注意：监听所有网络接口需要管理员权限！");
+                }
+                else
+                {
+                    prefix = $"http://{host}:{port}/ws/";
+                }
+
                 _listener.Prefixes.Clear();
-                _listener.Prefixes.Add(url);
+                _listener.Prefixes.Add(prefix);
                 _listener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
-                _listener.Start();
+
+                try
+                {
+                    _listener.Start();
+                }
+                catch (HttpListenerException ex)
+                {
+                    // 特殊处理HttpListener的常见错误
+                    if (ex.ErrorCode == 5) // 拒绝访问
+                    {
+                        throw new Exception("启动服务器需要管理员权限，或者使用netsh添加URL前缀访问权限", ex);
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
 
                 _isRunning = true;
 
-                Console.WriteLine($"WebSocket代理服务器已启动: {url}");
+                Console.WriteLine($"WebSocket代理服务器已启动: {prefix}");
                 Console.WriteLine($"目标FunASR服务器地址: {_targetServerUrl}");
 
                 // 开始监听请求
@@ -98,7 +134,17 @@ namespace FunASRServer
             catch (Exception ex)
             {
                 Console.WriteLine($"启动WebSocket服务器时出错: {ex.Message}");
-                _listener.Stop();
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"内部错误: {ex.InnerException.Message}");
+                }
+
+                // 避免重复关闭已经关闭的监听器
+                if (_listener.IsListening)
+                {
+                    _listener.Stop();
+                }
+
                 _isRunning = false;
                 throw;
             }
@@ -122,7 +168,13 @@ namespace FunASRServer
             }
 
             _clientSessions.Clear();
-            _listener.Stop();
+
+            // 检查监听器是否还在监听
+            if (_listener.IsListening)
+            {
+                _listener.Stop();
+            }
+
             Console.WriteLine("WebSocket代理服务器已停止");
         }
 

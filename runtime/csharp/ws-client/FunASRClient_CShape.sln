@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunASRWSClient_Offline", "F
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunASRWSClient_Online", "FunASRWSClient_Online\FunASRWSClient_Online.csproj", "{11E80B4F-A838-4DFB-A0C8-9BAE6726BAC0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunASRServer", "FunASRServer\FunASRServer.csproj", "{8B16CB38-4DE0-BD4B-1157-0BDE73F834DF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{11E80B4F-A838-4DFB-A0C8-9BAE6726BAC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{11E80B4F-A838-4DFB-A0C8-9BAE6726BAC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{11E80B4F-A838-4DFB-A0C8-9BAE6726BAC0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B16CB38-4DE0-BD4B-1157-0BDE73F834DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B16CB38-4DE0-BD4B-1157-0BDE73F834DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B16CB38-4DE0-BD4B-1157-0BDE73F834DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B16CB38-4DE0-BD4B-1157-0BDE73F834DF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
