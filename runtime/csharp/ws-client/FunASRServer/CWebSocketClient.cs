@@ -22,7 +22,7 @@ namespace FunASRServer
         /// 创建WebSocket客户端
         /// </summary>
         /// <param name="serverUrl">ASR服务器URL</param>
-        public CWebSocketClient(string serverUrl = "ws://124.223.76.169:10096/")
+        public CWebSocketClient(string serverUrl)
         {
             _serverUri = new Uri(serverUrl);
             _client = new WebsocketClient(_serverUri);

@@ -32,7 +32,7 @@ namespace FunASRServer
         /// 创建WebSocket服务器
         /// </summary>
         /// <param name="targetServerUrl">目标ASR服务器的WebSocket地址</param>
-        public CWebSocketServer(string targetServerUrl = "ws://124.223.76.169:10096/")
+        public CWebSocketServer(string targetServerUrl)
         {
             _listener = new HttpListener();
             _cts = new CancellationTokenSource();
@@ -44,7 +44,7 @@ namespace FunASRServer
         /// </summary>
         /// <param name="host">监听主机名</param>
         /// <param name="port">监听端口</param>
-        public async Task StartAsync(string host = "localhost", int port = 10095)
+        public async Task StartAsync(string host, int port)
         {
             if (_isRunning)
                 return;
@@ -57,19 +57,17 @@ namespace FunASRServer
                 {
                     // 对于监听所有网络接口，使用"+"而不是"0.0.0.0"
                     // 注意：需要管理员权限，或使用netsh添加URL ACL
-                    prefix = $"http://+:{port}/ws/";
+                    prefix = $"http://+:{port}/";
                     Console.WriteLine("注意：监听所有网络接口需要管理员权限！");
-                    Console.WriteLine("如果启动失败，请以管理员身份运行，或执行以下命令：");
-                    Console.WriteLine($"netsh http add urlacl url=http://+:{port}/ws/ user=Everyone");
                 }
                 else if (host == "*" || host == "+")
                 {
-                    prefix = $"http://+:{port}/ws/";
+                    prefix = $"http://+:{port}/";
                     Console.WriteLine("注意：监听所有网络接口需要管理员权限！");
                 }
                 else
                 {
-                    prefix = $"http://{host}:{port}/ws/";
+                    prefix = $"http://{host}:{port}/";
                 }
 
                 _listener.Prefixes.Clear();
