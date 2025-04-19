@@ -9,13 +9,13 @@ using System.Threading.Tasks;
 namespace FunASRServer
 {
     /// <summary>
-    /// WebSocket代理服务器，用于转发客户端与FunASR服务器之间的通信
+    /// WebSocket服务器，用于连接客户端与ASR服务器之间的通信
     /// </summary>
     public class CWebSocketServer
     {
         private readonly HttpListener _listener;
         private readonly CancellationTokenSource _cts;
-        // 保存客户端WebSocket和对应的FunASR服务器连接
+        // 保存客户端WebSocket和对应的ASR服务器连接
         private readonly ConcurrentDictionary<string, ClientSession> _clientSessions = new ConcurrentDictionary<string, ClientSession>();
         private readonly string _targetServerUrl;
         private bool _isRunning = false;
@@ -29,9 +29,9 @@ namespace FunASRServer
         }
 
         /// <summary>
-        /// 创建WebSocket代理服务器
+        /// 创建WebSocket服务器
         /// </summary>
-        /// <param name="targetServerUrl">目标FunASR服务器的WebSocket地址</param>
+        /// <param name="targetServerUrl">目标ASR服务器的WebSocket地址</param>
         public CWebSocketServer(string targetServerUrl = "ws://124.223.76.169:10096/")
         {
             _listener = new HttpListener();
@@ -40,7 +40,7 @@ namespace FunASRServer
         }
 
         /// <summary>
-        /// 启动WebSocket代理服务器
+        /// 启动WebSocket服务器
         /// </summary>
         /// <param name="host">监听主机名</param>
         /// <param name="port">监听端口</param>
@@ -95,8 +95,8 @@ namespace FunASRServer
 
                 _isRunning = true;
 
-                Console.WriteLine($"WebSocket代理服务器已启动: {prefix}");
-                Console.WriteLine($"目标FunASR服务器地址: {_targetServerUrl}");
+                Console.WriteLine($"MXASR WebSocket服务器已启动: {prefix}");
+                Console.WriteLine($"目标ASR服务器地址: {_targetServerUrl}");
 
                 // 开始监听请求
                 _ = Task.Run(async () =>
@@ -151,7 +151,7 @@ namespace FunASRServer
         }
 
         /// <summary>
-        /// 停止WebSocket代理服务器
+        /// 停止WebSocket服务器
         /// </summary>
         public async Task StopAsync()
         {
@@ -175,7 +175,7 @@ namespace FunASRServer
                 _listener.Stop();
             }
 
-            Console.WriteLine("WebSocket代理服务器已停止");
+            Console.WriteLine("MXASR WebSocket服务器已停止");
         }
 
         /// <summary>
@@ -198,7 +198,7 @@ namespace FunASRServer
                             "服务器关闭", CancellationToken.None);
                     }
 
-                    // 断开与FunASR服务器的连接
+                    // 断开与ASR服务器的连接
                     await session.ServerClient.DisconnectAsync();
                 }
                 catch (Exception ex)
@@ -224,7 +224,7 @@ namespace FunASRServer
                 webSocketContext = await context.AcceptWebSocketAsync(null);
                 WebSocket clientSocket = webSocketContext.WebSocket;
 
-                // 创建到FunASR服务器的WebSocket客户端
+                // 创建到ASR服务器的WebSocket客户端
                 var serverClient = new CWebSocketClient(_targetServerUrl);
 
                 // 创建会话取消源
@@ -242,20 +242,20 @@ namespace FunASRServer
 
                 Console.WriteLine($"客户端已连接: {clientId}");
 
-                // 连接到FunASR服务器
+                // 连接到MXASR服务器
                 string status = await serverClient.ClientConnTest();
-                Console.WriteLine($"客户端 {clientId} 连接到FunASR服务器: {status}");
+                Console.WriteLine($"客户端 {clientId} 连接到MXASR服务器: {status}");
 
                 if (status == "WebSocket通信连接成功")
                 {
-                    // 设置转发FunASR服务器消息到客户端的处理器
+                    // 设置处理ASR服务器消息的处理器
                     serverClient.SetMessageHandler(async (serverMessage) =>
                     {
                         try
                         {
                             if (clientSocket.State == WebSocketState.Open && !sessionCts.Token.IsCancellationRequested)
                             {
-                                // 转发服务器消息到客户端
+                                // 发送服务器消息到客户端
                                 var messageBytes = Encoding.UTF8.GetBytes(serverMessage);
                                 await clientSocket.SendAsync(
                                     new ArraySegment<byte>(messageBytes),
@@ -268,17 +268,17 @@ namespace FunASRServer
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"[{clientId}] 转发服务器消息时出错: {ex.Message}");
+                            Console.WriteLine($"[{clientId}] 处理服务器消息时出错: {ex.Message}");
                         }
                     });
 
-                    // 启动客户端消息转发任务
-                    await ForwardClientMessages(clientId, session);
+                    // 启动客户端消息处理任务
+                    await ProcessClientMessages(clientId, session);
                 }
                 else
                 {
-                    // 连接FunASR服务器失败，向客户端发送错误消息
-                    var errorMessage = Encoding.UTF8.GetBytes($"{{\"status\":\"error\",\"message\":\"无法连接到FunASR服务器: {status}\"}}");
+                    // 连接ASR服务器失败，向客户端发送错误消息
+                    var errorMessage = Encoding.UTF8.GetBytes($"{{\"status\":\"error\",\"message\":\"无法连接到ASR服务器: {status}\"}}");
                     await clientSocket.SendAsync(
                         new ArraySegment<byte>(errorMessage),
                         WebSocketMessageType.Text,
@@ -311,11 +311,11 @@ namespace FunASRServer
         }
 
         /// <summary>
-        /// 转发客户端消息到FunASR服务器
+        /// 处理客户端消息并发送到ASR服务器
         /// </summary>
         /// <param name="clientId">客户端ID</param>
         /// <param name="session">客户端会话</param>
-        private async Task ForwardClientMessages(string clientId, ClientSession session)
+        private async Task ProcessClientMessages(string clientId, ClientSession session)
         {
             var buffer = new byte[1024 * 16]; // 16KB缓冲区
             var clientSocket = session.ClientSocket;
@@ -345,14 +345,14 @@ namespace FunASRServer
                     byte[] receivedData = new byte[count];
                     Array.Copy(buffer, receivedData, count);
 
-                    // 转发消息到FunASR服务器
+                    // 发送消息到ASR服务器
                     if (receiveResult.MessageType == WebSocketMessageType.Text)
                     {
                         // 文本消息
                         string message = Encoding.UTF8.GetString(receivedData);
                         Console.WriteLine($"[{clientId}] 客户端 -> 服务器(文本): {message}");
 
-                        // 转发文本消息
+                        // 发送文本消息
                         serverClient.SendTextMessage(message);
                     }
                     else if (receiveResult.MessageType == WebSocketMessageType.Binary)
@@ -360,14 +360,14 @@ namespace FunASRServer
                         // 二进制数据（音频）
                         Console.WriteLine($"[{clientId}] 客户端 -> 服务器(二进制): {receivedData.Length} 字节");
 
-                        // 转发二进制数据
+                        // 发送二进制数据
                         serverClient.SendBinaryData(receivedData);
                     }
                 }
             }
             catch (Exception ex) when (ex is TaskCanceledException || ex is OperationCanceledException)
             {
-                Console.WriteLine($"[{clientId}] 客户端消息转发任务已取消");
+                Console.WriteLine($"[{clientId}] 客户端消息处理任务已取消");
             }
             catch (Exception ex) when (ex is WebSocketException)
             {
@@ -375,7 +375,7 @@ namespace FunASRServer
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[{clientId}] 转发客户端消息时出错: {ex.Message}");
+                Console.WriteLine($"[{clientId}] 处理客户端消息时出错: {ex.Message}");
             }
             finally
             {

@@ -9,7 +9,7 @@ using System.Reactive.Linq;
 namespace FunASRServer
 {
     /// <summary>
-    /// WebSocket客户端，用于连接到FunASR服务器
+    /// WebSocket客户端，用于连接到ASR服务器
     /// </summary>
     public class CWebSocketClient
     {
@@ -21,7 +21,7 @@ namespace FunASRServer
         /// <summary>
         /// 创建WebSocket客户端
         /// </summary>
-        /// <param name="serverUrl">FunASR服务器URL</param>
+        /// <param name="serverUrl">ASR服务器URL</param>
         public CWebSocketClient(string serverUrl = "ws://124.223.76.169:10096/")
         {
             _serverUri = new Uri(serverUrl);
@@ -39,7 +39,7 @@ namespace FunASRServer
         }
 
         /// <summary>
-        /// 发送文本消息到FunASR服务器
+        /// 发送文本消息到ASR服务器
         /// </summary>
         /// <param name="message">要发送的文本消息</param>
         public void SendTextMessage(string message)
@@ -51,7 +51,7 @@ namespace FunASRServer
         }
 
         /// <summary>
-        /// 发送二进制数据到FunASR服务器
+        /// 发送二进制数据到ASR服务器
         /// </summary>
         /// <param name="data">要发送的二进制数据</param>
         public void SendBinaryData(byte[] data)
@@ -63,7 +63,7 @@ namespace FunASRServer
         }
 
         /// <summary>
-        /// 连接测试，建立与FunASR服务器的WebSocket连接
+        /// 连接测试，建立与ASR服务器的WebSocket连接
         /// </summary>
         /// <returns>连接状态</returns>
         public async Task<string> ClientConnTest()
@@ -113,7 +113,7 @@ namespace FunASRServer
         }
 
         /// <summary>
-        /// 断开与FunASR服务器的连接
+        /// 断开与ASR服务器的连接
         /// </summary>
         public async Task DisconnectAsync()
         {
@@ -125,7 +125,7 @@ namespace FunASRServer
                     _client.Dispose();
                 }
                 _isConnected = false;
-                Console.WriteLine("已断开与FunASR服务器的连接");
+                Console.WriteLine("已断开与ASR服务器的连接");
             }
             catch (Exception ex)
             {
@@ -134,7 +134,7 @@ namespace FunASRServer
         }
 
         /// <summary>
-        /// 接收处理来自FunASR服务器的消息
+        /// 接收处理来自ASR服务器的消息
         /// </summary>
         /// <param name="message">接收到的消息</param>
         public void recmessage(string message)
@@ -147,7 +147,7 @@ namespace FunASRServer
         }
 
         /// <summary>
-        /// 确保已连接到FunASR服务器
+        /// 确保已连接到ASR服务器
         /// </summary>
         /// <returns>是否连接成功</returns>
         private async Task<bool> EnsureConnectedAsync()

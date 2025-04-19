@@ -7,7 +7,7 @@ namespace FunASRServer
     {
         static async Task Main(string[] args)
         {
-            Console.WriteLine("FunASR WebSocket代理服务器");
+            Console.WriteLine("MXASR WebSocket服务器");
             Console.WriteLine("----------------------------");
 
             string host = "127.0.0.1";  // 改为默认只监听本地地址，避免权限问题
@@ -55,7 +55,7 @@ namespace FunASRServer
                 Console.WriteLine();
             }
 
-            // 创建并启动WebSocket代理服务器
+            // 创建并启动WebSocket服务器
             CWebSocketServer server = new CWebSocketServer(targetUrl);
 
             try
@@ -95,7 +95,7 @@ namespace FunASRServer
 
         static void ShowHelp()
         {
-            Console.WriteLine("FunASR WebSocket代理服务器帮助");
+            Console.WriteLine("MXASR WebSocket服务器帮助");
             Console.WriteLine("----------------------------");
             Console.WriteLine("用法: FunASRServer.exe [选项]");
             Console.WriteLine();
@@ -103,7 +103,7 @@ namespace FunASRServer
             Console.WriteLine("  --host <主机>     指定监听的主机地址 (默认: 127.0.0.1)");
             Console.WriteLine("                    使用 0.0.0.0 监听所有网络接口(需要管理员权限)");
             Console.WriteLine("  --port <端口>     指定监听的端口 (默认: 10095)");
-            Console.WriteLine("  --target <URL>    指定目标FunASR服务器URL");
+            Console.WriteLine("  --target <URL>    指定目标ASR服务器URL");
             Console.WriteLine("                    (默认: ws://124.223.76.169:10095/)");
             Console.WriteLine("  --help, -h        显示此帮助信息");
             Console.WriteLine();
