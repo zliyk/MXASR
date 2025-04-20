@@ -144,7 +144,7 @@ namespace WebSocketSpace
                 client.Send(send);
                 Thread.Sleep(5);
             }
-            Thread.Sleep(10);
+            Thread.Sleep(500);
             client.Send("{\"is_speaking\": false}");
         }
 
@@ -157,7 +157,7 @@ namespace WebSocketSpace
                 client.Send(send);
                 Thread.Sleep(5);
             }
-            Thread.Sleep(10);
+            Thread.Sleep(500);
             client.Send("{\"is_speaking\": false}");
         }
 
