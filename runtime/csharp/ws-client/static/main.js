@@ -1,9 +1,3 @@
-/**
- * Copyright FunASR (https://github.com/alibaba-damo-academy/FunASR). All Rights
- * Reserved. MIT License  (https://opensource.org/licenses/MIT)
- */
-/* 2022-2023 by zhaoming,mali aihealthx.com */
-
 
 // 连接; 定义socket连接类对象与语音对象
 var wsconnecter = new WebSocketConnectMethod({msgHandle:getJsonMessage,stateHandle:getConnState});

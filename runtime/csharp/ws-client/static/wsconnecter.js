@@ -1,8 +1,3 @@
-/**
- * Copyright FunASR (https://github.com/alibaba-damo-academy/FunASR). All Rights
- * Reserved. MIT License  (https://opensource.org/licenses/MIT)
- */
-/* 2021-2023 by zhaoming,mali aihealthx.com */
 
 function WebSocketConnectMethod( config ) { //定义socket连接方法类
 

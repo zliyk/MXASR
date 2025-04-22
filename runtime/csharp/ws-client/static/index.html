@@ -14,8 +14,8 @@
 			--success-color: #2ecc71;
 			--warning-color: #f39c12;
 			--danger-color: #e74c3c;
-			--border-radius: 8px;
-			--box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+			--border-radius: 6px;
+			--box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 		}
 
 		* {
@@ -26,34 +26,35 @@
 
 		body {
 			font-family: 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', Arial, sans-serif;
-			line-height: 1.6;
+			line-height: 1.5;
 			color: var(--primary-color);
 			background-color: #f8f9fa;
-			padding: 2rem;
+			padding: 1rem;
+			font-size: 14px;
 		}
 
 		.container {
-			max-width: 1000px;
+			max-width: 950px;
 			margin: 0 auto;
 			background-color: #fff;
 			border-radius: var(--border-radius);
 			box-shadow: var(--box-shadow);
-			padding: 2rem;
+			padding: 1rem;
 		}
 
 		h1 {
 			color: var(--accent-color);
-			margin-bottom: 0.5rem;
-			font-size: 2.5rem;
+			margin-bottom: 0.3rem;
+			font-size: 1.8rem;
 			text-align: center;
 		}
 
 		h3 {
 			color: var(--dark-color);
-			margin-bottom: 1.5rem;
+			margin-bottom: 0.8rem;
 			font-weight: normal;
-			font-size: 1rem;
-			line-height: 1.5;
+			font-size: 0.9rem;
+			line-height: 1.4;
 			text-align: center;
 		}
 
@@ -69,7 +70,7 @@
 		.grid-layout {
 			display: grid;
 			grid-template-columns: repeat(3, 1fr);
-			gap: 1rem;
+			gap: 0.6rem;
 		}
 
 		.grid-layout>div.full-width {
@@ -83,16 +84,16 @@
 		.panel {
 			border: 1px solid #ddd;
 			border-radius: var(--border-radius);
-			padding: 1rem;
-			margin-bottom: 1rem;
+			padding: 0.6rem;
+			margin-bottom: 0.6rem;
 			background-color: var(--light-color);
 			height: 100%;
 		}
 
 		.panel-heading {
-			font-size: 1rem;
+			font-size: 0.9rem;
 			font-weight: bold;
-			margin-bottom: 0.5rem;
+			margin-bottom: 0.3rem;
 			color: var(--dark-color);
 		}
 
@@ -101,16 +102,17 @@
 		button,
 		select {
 			width: 100%;
-			padding: 0.7rem;
-			margin-bottom: 0.5rem;
+			padding: 0.4rem 0.6rem;
+			margin-bottom: 0.4rem;
 			border: 1px solid #ddd;
 			border-radius: var(--border-radius);
 			font-family: inherit;
-			font-size: 1rem;
+			font-size: 0.9rem;
 		}
 
 		input[type="file"] {
-			margin: 0.5rem 0;
+			margin: 0.3rem 0;
+			font-size: 0.9rem;
 		}
 
 		textarea {
@@ -124,6 +126,8 @@
 			cursor: pointer;
 			font-weight: bold;
 			transition: background-color 0.3s;
+			padding: 0.4rem 0.6rem;
+			font-size: 0.9rem;
 		}
 
 		button:hover {
@@ -137,8 +141,8 @@
 
 		.button-group {
 			display: flex;
-			gap: 1rem;
-			margin-top: 0.5rem;
+			gap: 0.6rem;
+			margin-top: 0.4rem;
 		}
 
 		.button-group button {
@@ -159,26 +163,37 @@
 
 		.radio-group {
 			display: flex;
-			gap: 1rem;
-			margin: 0.5rem 0;
+			gap: 0.8rem;
+			margin: 0.3rem 0;
+			font-size: 0.9rem;
 		}
 
 		.info-text {
-			padding: 0.7rem;
-			margin-bottom: 0.5rem;
+			padding: 0.4rem 0.6rem;
+			margin-bottom: 0.4rem;
 			border-radius: var(--border-radius);
 			background-color: #d6eaf8;
 			color: var(--primary-color);
+			font-size: 0.9rem;
 		}
 
 		audio {
 			width: 100%;
-			margin-top: 0.5rem;
+			margin-top: 0.4rem;
 			border-radius: var(--border-radius);
+			height: 30px;
 		}
 
 		.results-panel {
-			margin-top: 1rem;
+			margin-top: 0.6rem;
+		}
+
+		label {
+			font-size: 0.9rem;
+		}
+
+		.mode-option {
+			margin-top: 0.5rem;
 		}
 
 		@media (max-width: 992px) {
@@ -189,11 +204,11 @@
 
 		@media (max-width: 768px) {
 			body {
-				padding: 0.5rem;
+				padding: 0.3rem;
 			}
 
 			.container {
-				padding: 1rem;
+				padding: 0.6rem;
 			}
 
 			.grid-layout {
@@ -233,7 +248,7 @@
 					<div class="half-width">
 						<div class="panel">
 							<div class="panel-heading">热词设置 (一行一个关键字，空格隔开权重)</div>
-							<textarea rows="2" id="varHot">铭心云 20&#13;hello world 40</textarea>
+							<textarea rows="3" id="varHot">铭心云 20&#13;hello world 40</textarea>
 						</div>
 					</div>
 
@@ -248,6 +263,10 @@
 								<label><input name="recoder_mode" onclick="on_recoder_mode_change()" type="radio"
 										value="file" /> 文件 </label>
 							</div>
+							<!-- 文件上传功能直接集成在录音模式面板内 -->
+							<div id="rec_mode_div" class="mode-option" style="display:none;">
+								<input type="file" id="upfile">
+							</div>
 						</div>
 					</div>
 
@@ -256,30 +275,23 @@
 						<div id="mic_mode_div" class="panel">
 							<div class="panel-heading">选择ASR模型模式</div>
 							<div class="radio-group">
-								<label><input name="asr_mode" type="radio" value="2pass" checked="true" /> 2pass
+								<label><input name="asr_mode" type="radio" value="2pass" checked="true" /> 双通道
 								</label>
-								<label><input name="asr_mode" type="radio" value="online" /> Online </label>
-								<label><input name="asr_mode" type="radio" value="offline" /> Offline </label>
+								<label><input name="asr_mode" type="radio" value="online" /> 实时 </label>
+								<label><input name="asr_mode" type="radio" value="offline" /> 离线 </label>
 							</div>
 						</div>
 					</div>
 
-					<!-- ITN选项 -->
-					<div>
+					<!-- ITN选项 - 隐藏 -->
+					<div style="display:none;">
 						<div id="use_itn_div" class="panel">
 							<div class="panel-heading">逆文本标准化 (ITN)</div>
 							<div class="radio-group">
-								<label><input name="use_itn" type="radio" value="false" checked="true" /> 否 </label>
-								<label><input name="use_itn" type="radio" value="true" /> 是 </label>
-							</div>
-						</div>
-					</div>
+								<label><input name="use_itn" type="radio" value="true" checked="true" /> 是 </label>
+								<label><input name="use_itn" type="radio" value="false" /> 否 </label>
 
-					<!-- 文件上传区域 (全宽) -->
-					<div class="full-width">
-						<div id="rec_mode_div" class="panel" style="display:none;">
-							<div class="panel-heading">上传音频文件</div>
-							<input type="file" id="upfile">
+							</div>
 						</div>
 					</div>
 				</div>
@@ -287,7 +299,7 @@
 				<!-- 语音识别结果 (全宽) -->
 				<div class="panel results-panel">
 					<div class="panel-heading">语音识别结果</div>
-					<textarea rows="8" id="varArea" readonly="true"></textarea>
+					<textarea rows="16" id="varArea" readonly="true"></textarea>
 					<div id="info_div" class="info-text">请点击开始</div>
 					<div class="button-group">
 						<button id="btnConnect">连接</button>
