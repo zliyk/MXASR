@@ -355,8 +355,8 @@ namespace FunASRServer
                     }
                     else if (receiveResult.MessageType == WebSocketMessageType.Binary)
                     {
-                        // 二进制数据（音频）
-                        Console.WriteLine($"[{clientId}] 客户端 -> 服务器(二进制): {receivedData.Length} 字节");
+                        // 二进制数据（音频），显示个.代表有数据
+                        //Console.Write($".");
 
                         // 发送二进制数据
                         serverClient.SendBinaryData(receivedData);

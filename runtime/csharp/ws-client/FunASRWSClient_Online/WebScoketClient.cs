@@ -12,7 +12,7 @@ namespace WebSocketSpace
     { 
         private static int chunk_interval = 10;
         private static int[] chunk_size = new int[] { 5, 10, 5 };
-        private static readonly Uri serverUri = new Uri($"ws://127.0.0.1:10095/ws/"); // 你要连接的WebSocket服务器地址
+        private static readonly Uri serverUri = new Uri($"ws://127.0.0.1:9095"); // 你要连接的WebSocket服务器地址
         private static WebsocketClient client = new WebsocketClient(serverUri);
         public async Task<string> ClientConnTest()
         {

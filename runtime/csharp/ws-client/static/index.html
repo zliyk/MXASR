@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>语音识别 - MXASR</title>
+	<style>
+		:root {
+			--primary-color: #2c3e50;
+			--accent-color: #3498db;
+			--light-color: #ecf0f1;
+			--dark-color: #34495e;
+			--success-color: #2ecc71;
+			--warning-color: #f39c12;
+			--danger-color: #e74c3c;
+			--border-radius: 8px;
+			--box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+		}
+
+		* {
+			box-sizing: border-box;
+			margin: 0;
+			padding: 0;
+		}
+
+		body {
+			font-family: 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', Arial, sans-serif;
+			line-height: 1.6;
+			color: var(--primary-color);
+			background-color: #f8f9fa;
+			padding: 2rem;
+		}
+
+		.container {
+			max-width: 1000px;
+			margin: 0 auto;
+			background-color: #fff;
+			border-radius: var(--border-radius);
+			box-shadow: var(--box-shadow);
+			padding: 2rem;
+		}
+
+		h1 {
+			color: var(--accent-color);
+			margin-bottom: 0.5rem;
+			font-size: 2.5rem;
+			text-align: center;
+		}
+
+		h3 {
+			color: var(--dark-color);
+			margin-bottom: 1.5rem;
+			font-weight: normal;
+			font-size: 1rem;
+			line-height: 1.5;
+			text-align: center;
+		}
+
+		a {
+			color: var(--accent-color);
+			text-decoration: none;
+		}
+
+		a:hover {
+			text-decoration: underline;
+		}
+
+		.grid-layout {
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			gap: 1rem;
+		}
+
+		.grid-layout>div.full-width {
+			grid-column: 1 / -1;
+		}
+
+		.grid-layout>div.half-width {
+			grid-column: span 1.5;
+		}
+
+		.panel {
+			border: 1px solid #ddd;
+			border-radius: var(--border-radius);
+			padding: 1rem;
+			margin-bottom: 1rem;
+			background-color: var(--light-color);
+			height: 100%;
+		}
+
+		.panel-heading {
+			font-size: 1rem;
+			font-weight: bold;
+			margin-bottom: 0.5rem;
+			color: var(--dark-color);
+		}
+
+		input[type="text"],
+		textarea,
+		button,
+		select {
+			width: 100%;
+			padding: 0.7rem;
+			margin-bottom: 0.5rem;
+			border: 1px solid #ddd;
+			border-radius: var(--border-radius);
+			font-family: inherit;
+			font-size: 1rem;
+		}
+
+		input[type="file"] {
+			margin: 0.5rem 0;
+		}
+
+		textarea {
+			resize: vertical;
+		}
+
+		button {
+			background-color: var(--accent-color);
+			color: white;
+			border: none;
+			cursor: pointer;
+			font-weight: bold;
+			transition: background-color 0.3s;
+		}
+
+		button:hover {
+			background-color: #2980b9;
+		}
+
+		button:disabled {
+			background-color: #95a5a6;
+			cursor: not-allowed;
+		}
+
+		.button-group {
+			display: flex;
+			gap: 1rem;
+			margin-top: 0.5rem;
+		}
+
+		.button-group button {
+			flex: 1;
+		}
+
+		#btnConnect {
+			background-color: var(--primary-color);
+		}
+
+		#btnStart {
+			background-color: var(--success-color);
+		}
+
+		#btnStop {
+			background-color: var(--danger-color);
+		}
+
+		.radio-group {
+			display: flex;
+			gap: 1rem;
+			margin: 0.5rem 0;
+		}
+
+		.info-text {
+			padding: 0.7rem;
+			margin-bottom: 0.5rem;
+			border-radius: var(--border-radius);
+			background-color: #d6eaf8;
+			color: var(--primary-color);
+		}
+
+		audio {
+			width: 100%;
+			margin-top: 0.5rem;
+			border-radius: var(--border-radius);
+		}
+
+		.results-panel {
+			margin-top: 1rem;
+		}
+
+		@media (max-width: 992px) {
+			.grid-layout {
+				grid-template-columns: repeat(2, 1fr);
+			}
+		}
+
+		@media (max-width: 768px) {
+			body {
+				padding: 0.5rem;
+			}
+
+			.container {
+				padding: 1rem;
+			}
+
+			.grid-layout {
+				grid-template-columns: 1fr;
+			}
+
+			.button-group {
+				flex-direction: column;
+			}
+		}
+	</style>
+</head>
+
+<body>
+	<div class="container">
+		<script src="recorder-core.js" charset="UTF-8"></script>
+		<script src="wav.js" charset="UTF-8"></script>
+		<script src="pcm.js" charset="UTF-8"></script>
+
+		<h1>MXASR Demo</h1>
+		<h3>这里是MXASR项目体验demo</h3>
+
+		<div class="div_class_topArea">
+			<div class="div_class_recordControl">
+				<div class="grid-layout">
+					<!-- 第一行：服务器地址和热词设置并排 -->
+					<div class="half-width">
+						<div class="panel">
+							<div class="panel-heading">ASR服务器地址 (必填)</div>
+							<input id="wssip" type="text" onchange="addresschange()" value="ws://127.0.0.1:9095/" />
+							<a id="wsslink" href="#" onclick="window.open('http://127.0.0.1:9095/', '_blank')">
+								<div id="info_wslink" class="info-text">点此处手工授权ws://127.0.0.1:9095/</div>
+							</a>
+						</div>
+					</div>
+
+					<div class="half-width">
+						<div class="panel">
+							<div class="panel-heading">热词设置 (一行一个关键字，空格隔开权重)</div>
+							<textarea rows="2" id="varHot">铭心云 20&#13;hello world 40</textarea>
+						</div>
+					</div>
+
+					<!-- 第二行：三个选项放在一行 -->
+					<!-- 选择录音模式 -->
+					<div>
+						<div class="panel">
+							<div class="panel-heading">选择录音模式</div>
+							<div class="radio-group">
+								<label><input name="recoder_mode" onclick="on_recoder_mode_change()" type="radio"
+										value="mic" checked="true" /> 麦克风 </label>
+								<label><input name="recoder_mode" onclick="on_recoder_mode_change()" type="radio"
+										value="file" /> 文件 </label>
+							</div>
+						</div>
+					</div>
+
+					<!-- ASR模型模式 -->
+					<div>
+						<div id="mic_mode_div" class="panel">
+							<div class="panel-heading">选择ASR模型模式</div>
+							<div class="radio-group">
+								<label><input name="asr_mode" type="radio" value="2pass" checked="true" /> 2pass
+								</label>
+								<label><input name="asr_mode" type="radio" value="online" /> Online </label>
+								<label><input name="asr_mode" type="radio" value="offline" /> Offline </label>
+							</div>
+						</div>
+					</div>
+
+					<!-- ITN选项 -->
+					<div>
+						<div id="use_itn_div" class="panel">
+							<div class="panel-heading">逆文本标准化 (ITN)</div>
+							<div class="radio-group">
+								<label><input name="use_itn" type="radio" value="false" checked="true" /> 否 </label>
+								<label><input name="use_itn" type="radio" value="true" /> 是 </label>
+							</div>
+						</div>
+					</div>
+
+					<!-- 文件上传区域 (全宽) -->
+					<div class="full-width">
+						<div id="rec_mode_div" class="panel" style="display:none;">
+							<div class="panel-heading">上传音频文件</div>
+							<input type="file" id="upfile">
+						</div>
+					</div>
+				</div>
+
+				<!-- 语音识别结果 (全宽) -->
+				<div class="panel results-panel">
+					<div class="panel-heading">语音识别结果</div>
+					<textarea rows="8" id="varArea" readonly="true"></textarea>
+					<div id="info_div" class="info-text">请点击开始</div>
+					<div class="button-group">
+						<button id="btnConnect">连接</button>
+						<button id="btnStart">开始</button>
+						<button id="btnStop">停止</button>
+					</div>
+					<audio id="audio_record" type="audio/wav" controls></audio>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script src="wsconnecter.js" charset="utf-8"></script>
+	<script src="main.js" charset="utf-8"></script>
+</body>
+
+</html>
