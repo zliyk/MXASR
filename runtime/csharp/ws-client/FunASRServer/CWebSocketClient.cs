@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Websocket.Client;
 using System.Reactive.Linq;
 
-namespace FunASRServer
+namespace MXASRServer
 {
     /// <summary>
     /// WebSocket客户端，用于连接到ASR服务器

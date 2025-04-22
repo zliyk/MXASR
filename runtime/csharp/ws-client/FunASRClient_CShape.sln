@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunASRWSClient_Offline", "F
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunASRWSClient_Online", "FunASRWSClient_Online\FunASRWSClient_Online.csproj", "{11E80B4F-A838-4DFB-A0C8-9BAE6726BAC0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunASRServer", "FunASRServer\FunASRServer.csproj", "{8B16CB38-4DE0-BD4B-1157-0BDE73F834DF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MXASRServer", "FunASRServer\MXASRServer.csproj", "{8B16CB38-4DE0-BD4B-1157-0BDE73F834DF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

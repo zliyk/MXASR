@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace FunASRServer
+namespace MXASRServer
 {
     class Program
     {

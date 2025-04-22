@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace FunASRServer
+namespace MXASRServer
 {
     /// <summary>
     /// WebSocket服务器，用于连接客户端与ASR服务器之间的通信
