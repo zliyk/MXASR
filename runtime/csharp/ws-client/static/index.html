@@ -177,6 +177,23 @@
 			font-size: 0.9rem;
 		}
 
+		.auth-link {
+			font-size: 0.85rem;
+			padding: 0.3rem 0.5rem;
+			margin-bottom: 0.3rem;
+			color: #2980b9;
+			background-color: rgba(214, 234, 248, 0.5);
+			border-radius: var(--border-radius);
+			cursor: pointer;
+			display: inline-block;
+		}
+
+		.auth-note {
+			font-size: 0.8rem;
+			color: #7f8c8d;
+			margin-bottom: 0.3rem;
+		}
+
 		audio {
 			width: 100%;
 			margin-top: 0.4rem;
@@ -239,8 +256,9 @@
 						<div class="panel">
 							<div class="panel-heading">ASR服务器地址 (必填)</div>
 							<input id="wssip" type="text" onchange="addresschange()" value="ws://127.0.0.1:9095/" />
-							<a id="wsslink" href="#" onclick="window.open('http://127.0.0.1:9095/', '_blank')">
-								<div id="info_wslink" class="info-text">点此处手工授权ws://127.0.0.1:9095/</div>
+							<span class="auth-note">若连接失败，请点击下方链接访问服务器网页，接受证书/授权：</span>
+							<a id="wsslink" href="#" onclick="tryServerConnection()">
+								<span id="info_wslink" class="auth-link">打开服务器网页 (http://127.0.0.1:9095/)</span>
 							</a>
 						</div>
 					</div>
@@ -314,6 +332,54 @@
 
 	<script src="wsconnecter.js" charset="utf-8"></script>
 	<script src="main.js" charset="utf-8"></script>
+	<script>
+		// 辅助函数，用于打开服务器网页以实现授权
+		function tryServerConnection() {
+			var serverUrl = document.getElementById('wssip').value;
+			// 转换WebSocket URL为HTTP/HTTPS URL
+			var httpUrl = serverUrl;
+			if (serverUrl.startsWith('ws://')) {
+				httpUrl = 'http://' + serverUrl.substring(5);
+			} else if (serverUrl.startsWith('wss://')) {
+				httpUrl = 'https://' + serverUrl.substring(6);
+			}
+
+			// 在新窗口中打开服务器
+			window.open(httpUrl, '_blank');
+
+			// 更新状态信息
+			var infoDiv = document.getElementById('info_div');
+			infoDiv.innerHTML = "已打开服务器网页，请在新窗口中接受证书/授权，然后点击连接按钮";
+		}
+
+		// 覆盖addresschange函数中的链接生成逻辑
+		function updateAuthLink() {
+			var serverUrl = document.getElementById('wssip').value;
+			var linkText = document.getElementById('info_wslink');
+			var httpUrl = serverUrl;
+
+			if (serverUrl.startsWith('ws://')) {
+				httpUrl = 'http://' + serverUrl.substring(5);
+				linkText.innerHTML = '打开服务器网页 (' + httpUrl + ')';
+			} else if (serverUrl.startsWith('wss://')) {
+				httpUrl = 'https://' + serverUrl.substring(6);
+				linkText.innerHTML = '打开服务器网页 (' + httpUrl + ')';
+			} else {
+				linkText.innerHTML = '打开服务器网页';
+			}
+		}
+
+		// 初始化时更新授权链接
+		document.addEventListener("DOMContentLoaded", function () {
+			updateAuthLink();
+
+			// 为服务器地址输入框添加事件监听器
+			var serverInput = document.getElementById('wssip');
+			if (serverInput) {
+				serverInput.addEventListener("input", updateAuthLink);
+			}
+		});
+	</script>
 </body>
 
 </html>

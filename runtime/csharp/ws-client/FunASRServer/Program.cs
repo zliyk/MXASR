@@ -10,9 +10,9 @@ namespace MXASRServer
             Console.WriteLine("MXASR WebSocket服务器");
             Console.WriteLine("----------------------------");
 
-            string host = "127.0.0.1";  // 改为默认只监听本地地址，避免权限问题
+            string host = "0.0.0.0";  // 改为默认只监听本地地址，避免权限问题
             int port = 9095;         // 默认端口
-            string targetUrl = "ws://124.223.76.169:10096/";  // 默认目标服务器
+            string targetUrl = "wss://124.223.76.169:10095/";  // 默认目标服务器
 
 
             // 创建并启动WebSocket服务器

@@ -1,4 +1,3 @@
-
 // 连接; 定义socket连接类对象与语音对象
 var wsconnecter = new WebSocketConnectMethod({msgHandle:getJsonMessage,stateHandle:getConnState});
 var audioBlob;
@@ -72,20 +71,30 @@ if (currentUrl.startsWith('http://') || currentUrl.startsWith('https://')) {
 addresschange();
 function addresschange()
 {   
-	
     var Uri = document.getElementById('wssip').value; 
-    // 更新授权链接显示
+    
+    // 注意：授权链接的处理已移至HTML文件中的updateAuthLink函数
+    // 这里仅转换URL以保持兼容性
     if (Uri.startsWith('ws://')) {
-        document.getElementById('info_wslink').innerHTML = "点此处手工授权ws://" + Uri.substring(5);
         Uri = Uri.replace(/ws:/g, "http:");
     } else if (Uri.startsWith('wss://')) {
-        document.getElementById('info_wslink').innerHTML = "点此处手工授权（IOS手机）";
         Uri = Uri.replace(/wss:/g, "https:");
     }
     console.log("addresschange uri=", Uri);
     
-    awsslink.onclick = function() {
-        window.open(Uri, '_blank');
+    // 如果HTML中的updateAuthLink函数存在，则调用它
+    if (typeof updateAuthLink === 'function') {
+        updateAuthLink();
+    }
+    
+    // 保留原始的链接点击处理，但将打开窗口的逻辑移到tryServerConnection
+    awsslink.onclick = function(e) {
+        e.preventDefault();
+        if (typeof tryServerConnection === 'function') {
+            tryServerConnection();
+        } else {
+            window.open(Uri, '_blank');
+        }
     }
 }
 
@@ -332,6 +341,10 @@ function handleWithTimestamp(tmptext,tmptime)
 	{
 		return tmptext;
 	}
+	
+	// 过滤掉<|xxx|>这样的标记
+	tmptext = tmptext.replace(/<\|.*?\|>/g, "");
+	
 	tmptext=tmptext.replace(/。|？|，|、|\?|\.|\ /g, ","); // in case there are a lot of "。"
 	var words=tmptext.split(",");  // split to chinese sentence or english words
 	var jsontime=JSON.parse(tmptime); //JSON.parse(tmptime.replace(/\]\]\[\[/g, "],[")); // in case there are a lot segments by VAD
@@ -357,14 +370,16 @@ function handleWithTimestamp(tmptext,tmptime)
 	}
 	}
 	return text_withtime;
-	
-
 }
 // 语音识别结果; 对jsonMsg数据解析,将识别结果附加到编辑框中
 function getJsonMessage( jsonMsg ) {
 	//console.log(jsonMsg);
 	console.log( "message: " + JSON.parse(jsonMsg.data)['text'] );
 	var rectxt=""+JSON.parse(jsonMsg.data)['text'];
+	
+	// 过滤掉<|xxx|>这样的标记
+	rectxt = rectxt.replace(/<\|.*?\|>/g, "");
+	
 	var asrmodel=JSON.parse(jsonMsg.data)['mode'];
 	var is_final=JSON.parse(jsonMsg.data)['is_final'];
 	var timestamp=JSON.parse(jsonMsg.data)['timestamp'];
