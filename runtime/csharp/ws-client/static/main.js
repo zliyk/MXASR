@@ -208,28 +208,20 @@ function play_file()
 }
 function start_file_send()
 {
-		sampleBuf=new Uint8Array( file_data_array );
+    sampleBuf=new Uint8Array(file_data_array);
+    var chunk_size=960; // for asr chunk_size [5, 10, 5]
  
-		var chunk_size=960; // for asr chunk_size [5, 10, 5]
+    while(sampleBuf.length>=chunk_size){
+        sendBuf=sampleBuf.slice(0,chunk_size);
+        totalsend=totalsend+sampleBuf.length;
+        sampleBuf=sampleBuf.slice(chunk_size,sampleBuf.length);
+        wsconnecter.wsSend(sendBuf);
+    }
+    
+    // 设置明确的状态提示
+    info_div.innerHTML = "文件已发送，正在等待识别结果...";
  
-
- 
-		
- 
-		while(sampleBuf.length>=chunk_size){
-			
-		    sendBuf=sampleBuf.slice(0,chunk_size);
-			totalsend=totalsend+sampleBuf.length;
-			sampleBuf=sampleBuf.slice(chunk_size,sampleBuf.length);
-			wsconnecter.wsSend(sendBuf);
- 
-		 
-		}
- 
-		stop();
-
- 
-
+    stop();
 }
  
 	
@@ -373,45 +365,56 @@ function handleWithTimestamp(tmptext,tmptime)
 }
 // 语音识别结果; 对jsonMsg数据解析,将识别结果附加到编辑框中
 function getJsonMessage( jsonMsg ) {
-	//console.log(jsonMsg);
-	console.log( "message: " + JSON.parse(jsonMsg.data)['text'] );
-	var rectxt=""+JSON.parse(jsonMsg.data)['text'];
+	// 解析JSON数据
+	var jsonData = JSON.parse(jsonMsg.data);
+	
+	// 输出完整的JSON数据，以便于调试
+	console.log("完整的JSON数据:", jsonData);
+	
+	// 获取文本内容
+	var rectxt = "" + jsonData['text'];
+	console.log("接收到的文本:", rectxt);
 	
 	// 过滤掉<|xxx|>这样的标记
 	rectxt = rectxt.replace(/<\|.*?\|>/g, "");
 	
-	var asrmodel=JSON.parse(jsonMsg.data)['mode'];
-	var is_final=JSON.parse(jsonMsg.data)['is_final'];
-	var timestamp=JSON.parse(jsonMsg.data)['timestamp'];
-	if(asrmodel=="2pass-offline" || asrmodel=="offline")
-	{
-		
-		offline_text=offline_text+handleWithTimestamp(rectxt,timestamp); //rectxt; //.replace(/ +/g,"");
-		rec_text=offline_text;
-	}
-	else
-	{
-		rec_text=rec_text+rectxt; //.replace(/ +/g,"");
-	}
-	var varArea=document.getElementById('varArea');
+	// 获取其他字段
+	var asrmodel = jsonData['mode'];
+	var is_final = jsonData['is_final'];
+	var timestamp = jsonData['timestamp'];
 	
-	varArea.value=rec_text;
-	console.log( "offline_text: " + asrmodel+","+offline_text);
-	console.log( "rec_text: " + rec_text);
-	if (isfilemode==true && is_final==true){
-		console.log("call stop ws!");
+	// 输出关键状态信息
+	console.log("模式:", asrmodel, "是否最终结果:", is_final, "文件模式:", isfilemode);
+	
+	// 根据模式处理文本
+	if(asrmodel=="2pass-offline" || asrmodel=="offline") {
+		offline_text = offline_text + handleWithTimestamp(rectxt, timestamp);
+		rec_text = offline_text;
+	} else {
+		rec_text = rec_text + rectxt;
+	}
+	
+	// 更新UI
+	var varArea = document.getElementById('varArea');
+	varArea.value = rec_text;
+	
+	// 文件模式下的处理 - 只要收到任何数据就视为完成
+	if (isfilemode == true) {
+		// 获取当前的ASR模式
+		var currentAsrMode = getAsrMode();
+		console.log("当前ASR模式:", currentAsrMode);
+		
+		// 文件模式下，一收到结果就是完整结果，立即显示完成状态
+		console.log("文件模式识别完成，已收到所有结果");
 		play_file();
 		wsconnecter.wsStop();
-        
-		info_div.innerHTML="请点击连接";
- 
+		
+		info_div.innerHTML = "识别完成！请点击连接开始新的识别";
+		
 		btnStart.disabled = true;
 		btnStop.disabled = true;
-		btnConnect.disabled=false;
+		btnConnect.disabled = false;
 	}
-	
-	 
- 
 }
 
 // 连接状态响应
@@ -494,72 +497,64 @@ function start() {
 
  
 function stop() {
-		var chunk_size = new Array( 5, 10, 5 );
-		var request = {
-			"chunk_size": chunk_size,
-			"wav_name":  "h5",
-			"is_speaking":  false,
-			"chunk_interval":10,
-			"mode":getAsrMode(),
-		};
-		console.log(request);
-		if(sampleBuf.length>0){
+	var chunk_size = new Array( 5, 10, 5 );
+	var request = {
+		"chunk_size": chunk_size,
+		"wav_name":  "h5",
+		"is_speaking":  false,
+		"chunk_interval": 10,
+		"mode": getAsrMode(),
+	};
+	console.log(request);
+	
+	if(sampleBuf.length>0){
 		wsconnecter.wsSend(sampleBuf);
 		console.log("sampleBuf.length"+sampleBuf.length);
 		sampleBuf=new Int16Array();
-		}
-	   wsconnecter.wsSend( JSON.stringify(request) );
+	}
  
-	  
-	
-	 
+	wsconnecter.wsSend(JSON.stringify(request));
 
- 
 	// 控件状态更新
-	
 	isRec = false;
-    info_div.innerHTML="发送完数据,请等候,正在识别...";
+	
+	// 文件模式下不更新显示为"发送完数据,请等候,正在识别..."，保持原状态
+	// 让getJsonMessage函数在收到结果后更新状态
+	if (!isfilemode) {
+		info_div.innerHTML="发送完数据,请等候,正在识别...";
+	}
 
-   if(isfilemode==false){
-	    btnStop.disabled = true;
+	if(isfilemode==false){
+		btnStop.disabled = true;
 		btnStart.disabled = true;
 		btnConnect.disabled=true;
 		//wait 3s for asr result
-	  setTimeout(function(){
-		console.log("call stop ws!");
-		wsconnecter.wsStop();
-		btnConnect.disabled=false;
-		info_div.innerHTML="请点击连接";}, 3000 );
- 
- 
-	   
-	rec.stop(function(blob,duration){
-  
-		console.log(blob);
-		var audioBlob = Recorder.pcm2wav(data = {sampleRate:16000, bitRate:16, blob:blob},
-		function(theblob,duration){
-				console.log(theblob);
-		var audio_record = document.getElementById('audio_record');
-		audio_record.src =  (window.URL||webkitURL).createObjectURL(theblob); 
-        audio_record.controls=true;
-		//audio_record.play(); 
-         	
-
-	}   ,function(msg){
-		 console.log(msg);
+		setTimeout(function(){
+			console.log("call stop ws!");
+			wsconnecter.wsStop();
+			btnConnect.disabled=false;
+			info_div.innerHTML="请点击连接";
+		}, 3000);
+   
+		rec.stop(function(blob,duration){
+			console.log(blob);
+			var audioBlob = Recorder.pcm2wav(
+				data = {sampleRate:16000, bitRate:16, blob:blob},
+				function(theblob,duration){
+					console.log(theblob);
+					var audio_record = document.getElementById('audio_record');
+					audio_record.src = (window.URL||webkitURL).createObjectURL(theblob); 
+					audio_record.controls=true;
+					//audio_record.play(); 
+				},
+				function(msg){
+					console.log(msg);
+				}
+			);
+		}, function(errMsg){
+			console.log("errMsg: " + errMsg);
+		});
 	}
-		);
- 
-
- 
-	},function(errMsg){
-		console.log("errMsg: " + errMsg);
-	});
-   }
-    // 停止连接
- 
-    
-
 }
 
 function clear() {
