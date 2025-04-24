@@ -86,16 +86,6 @@ function addresschange()
     if (typeof updateAuthLink === 'function') {
         updateAuthLink();
     }
-    
-    // 保留原始的链接点击处理，但将打开窗口的逻辑移到tryServerConnection
-    awsslink.onclick = function(e) {
-        e.preventDefault();
-        if (typeof tryServerConnection === 'function') {
-            tryServerConnection();
-        } else {
-            window.open(Uri, '_blank');
-        }
-    }
 }
 
 upfile.onclick=function()
@@ -103,7 +93,6 @@ upfile.onclick=function()
 		btnStart.disabled = true;
 		btnStop.disabled = true;
 		btnConnect.disabled=false;
-	
 }
 
 // from https://github.com/xiangyuecn/Recorder/tree/master
@@ -261,11 +250,17 @@ function on_recoder_mode_change()
 				document.getElementById("mic_mode_div").style.display = 'block';
 				document.getElementById("rec_mode_div").style.display = 'none';
  
- 
 		        btnStart.disabled = true;
 		        btnStop.disabled = true;
 		        btnConnect.disabled=false;
 				isfilemode=false;
+				
+				// 自动设置麦克风模式的服务器地址
+				document.getElementById('wssip').value = "ws://124.223.76.169:10096/";
+				// 更新授权链接
+				if (typeof updateAuthLink === 'function') {
+					updateAuthLink();
+				}
 			}
 			else
 			{
@@ -274,11 +269,16 @@ function on_recoder_mode_change()
  
 		        btnStart.disabled = true;
 		        btnStop.disabled = true;
-		        btnConnect.disabled=true;
+		        btnConnect.disabled=false;
 			    isfilemode=true;
-				info_div.innerHTML='请点击选择文件';
+				info_div.innerHTML='请选择文件，然后点击连接进行识别';
 			    
-	 
+				// 自动设置文件模式的服务器地址
+				document.getElementById('wssip').value = "ws://124.223.76.169:10095/";
+				// 更新授权链接
+				if (typeof updateAuthLink === 'function') {
+					updateAuthLink();
+				}
 			}
 }
 

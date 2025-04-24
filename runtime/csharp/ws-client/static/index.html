@@ -251,19 +251,17 @@
 		<div class="div_class_topArea">
 			<div class="div_class_recordControl">
 				<div class="grid-layout">
-					<!-- 第一行：服务器地址和热词设置并排 -->
+					<!-- 第一行：服务器地址 -->
 					<div class="half-width">
 						<div class="panel">
-							<div class="panel-heading">ASR服务器地址 (必填)</div>
-							<input id="wssip" type="text" onchange="addresschange()" value="ws://127.0.0.1:9095/" />
-							<span class="auth-note">若连接失败，请点击下方链接访问服务器网页，接受证书/授权：</span>
-							<a id="wsslink" href="#" onclick="tryServerConnection()">
-								<span id="info_wslink" class="auth-link">打开服务器网页 (http://127.0.0.1:9095/)</span>
-							</a>
+							<div class="panel-heading">ASR服务器地址</div>
+							<input id="wssip" type="text" onchange="addresschange()"
+								value="ws://124.223.76.169:10096/" />
 						</div>
 					</div>
 
-					<div class="half-width">
+					<!-- 热词设置 - 已隐藏 -->
+					<div class="half-width" style="display:none;">
 						<div class="panel">
 							<div class="panel-heading">热词设置 (一行一个关键字，空格隔开权重)</div>
 							<textarea rows="3" id="varHot">铭心云 20&#13;hello world 40</textarea>
@@ -288,8 +286,8 @@
 						</div>
 					</div>
 
-					<!-- ASR模型模式 -->
-					<div>
+					<!-- ASR模型模式 - 已隐藏 -->
+					<div style="display:none;">
 						<div id="mic_mode_div" class="panel">
 							<div class="panel-heading">选择ASR模型模式</div>
 							<div class="radio-group">
@@ -308,7 +306,6 @@
 							<div class="radio-group">
 								<label><input name="use_itn" type="radio" value="true" checked="true" /> 是 </label>
 								<label><input name="use_itn" type="radio" value="false" /> 否 </label>
-
 							</div>
 						</div>
 					</div>
@@ -333,51 +330,10 @@
 	<script src="wsconnecter.js" charset="utf-8"></script>
 	<script src="main.js" charset="utf-8"></script>
 	<script>
-		// 辅助函数，用于打开服务器网页以实现授权
-		function tryServerConnection() {
-			var serverUrl = document.getElementById('wssip').value;
-			// 转换WebSocket URL为HTTP/HTTPS URL
-			var httpUrl = serverUrl;
-			if (serverUrl.startsWith('ws://')) {
-				httpUrl = 'http://' + serverUrl.substring(5);
-			} else if (serverUrl.startsWith('wss://')) {
-				httpUrl = 'https://' + serverUrl.substring(6);
-			}
-
-			// 在新窗口中打开服务器
-			window.open(httpUrl, '_blank');
-
-			// 更新状态信息
-			var infoDiv = document.getElementById('info_div');
-			infoDiv.innerHTML = "已打开服务器网页，请在新窗口中接受证书/授权，然后点击连接按钮";
-		}
-
-		// 覆盖addresschange函数中的链接生成逻辑
-		function updateAuthLink() {
-			var serverUrl = document.getElementById('wssip').value;
-			var linkText = document.getElementById('info_wslink');
-			var httpUrl = serverUrl;
-
-			if (serverUrl.startsWith('ws://')) {
-				httpUrl = 'http://' + serverUrl.substring(5);
-				linkText.innerHTML = '打开服务器网页 (' + httpUrl + ')';
-			} else if (serverUrl.startsWith('wss://')) {
-				httpUrl = 'https://' + serverUrl.substring(6);
-				linkText.innerHTML = '打开服务器网页 (' + httpUrl + ')';
-			} else {
-				linkText.innerHTML = '打开服务器网页';
-			}
-		}
-
-		// 初始化时更新授权链接
+		// 页面加载完成后触发一次模式切换，确保地址正确设置
 		document.addEventListener("DOMContentLoaded", function () {
-			updateAuthLink();
-
-			// 为服务器地址输入框添加事件监听器
-			var serverInput = document.getElementById('wssip');
-			if (serverInput) {
-				serverInput.addEventListener("input", updateAuthLink);
-			}
+			// 调用一次切换函数，确保使用正确的地址
+			on_recoder_mode_change();
 		});
 	</script>
 </body>
