@@ -11,7 +11,7 @@ namespace WebSocketSpace
 
         public static string hotword = null;
 
-        private static readonly Uri serverUri = new Uri($"ws://127.0.0.1:9095/"); // 你要连接的WebSocket服务器地址
+        private static readonly Uri serverUri = new Uri($"ws://124.223.76.169:10095/"); // 你要连接的WebSocket服务器地址
         private static WebsocketClient client = new WebsocketClient(serverUri);
         public async Task<string> ClientConnTest()
         {
