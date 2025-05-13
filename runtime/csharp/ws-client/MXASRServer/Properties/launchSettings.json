@@ -2,6 +2,9 @@
   "profiles": {
     "MXASRServer": {
       "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
     }
   }
 }
