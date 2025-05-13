@@ -38,6 +38,10 @@ namespace MXASRServer
             public bool IsReceivingAudio { get; set; } = false;
             // 最后一次接收音频的时间
             public DateTime LastAudioReceiveTime { get; set; } = DateTime.Now;
+
+            // 用于顺序处理的额外字段
+            public string StartMessage { get; set; } = null;
+            public byte[] ProcessedAudioData { get; set; } = null;
         }
 
         /// <summary>
@@ -49,6 +53,9 @@ namespace MXASRServer
             _listener = new HttpListener();
             _cts = new CancellationTokenSource();
             _targetServerUrl = targetServerUrl;
+
+            // 初始化日志系统
+            Logger.Initialize();
         }
 
         /// <summary>
@@ -70,12 +77,12 @@ namespace MXASRServer
                     // 对于监听所有网络接口，使用"+"而不是"0.0.0.0"
                     // 注意：需要管理员权限，或使用netsh添加URL ACL
                     prefix = $"http://+:{port}/";
-                    Console.WriteLine("注意：监听所有网络接口需要管理员权限！");
+                    Logger.Warning("注意：监听所有网络接口需要管理员权限！");
                 }
                 else if (host == "*" || host == "+")
                 {
                     prefix = $"http://+:{port}/";
-                    Console.WriteLine("注意：监听所有网络接口需要管理员权限！");
+                    Logger.Warning("注意：监听所有网络接口需要管理员权限！");
                 }
                 else
                 {
@@ -105,8 +112,8 @@ namespace MXASRServer
 
                 _isRunning = true;
 
-                Console.WriteLine($"MXASR WebSocket服务器已启动: {prefix}");
-                Console.WriteLine($"目标ASR服务器地址: {_targetServerUrl}");
+                Logger.Info($"MXASR WebSocket服务器已启动: {prefix}");
+                Logger.Info($"目标ASR服务器地址: {_targetServerUrl}");
 
                 // 开始监听请求
                 _ = Task.Run(async () =>
@@ -133,20 +140,20 @@ namespace MXASRServer
                     catch (Exception ex) when (ex is HttpListenerException || ex is TaskCanceledException || ex is OperationCanceledException)
                     {
                         // 服务器停止或取消时的预期异常
-                        Console.WriteLine("WebSocket服务器监听循环已停止");
+                        Logger.Info("WebSocket服务器监听循环已停止");
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"WebSocket服务器监听循环出错: {ex.Message}");
+                        Logger.Error($"WebSocket服务器监听循环出错: {ex.Message}");
                     }
                 }, _cts.Token);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"启动WebSocket服务器时出错: {ex.Message}");
+                Logger.Error($"启动WebSocket服务器时出错: {ex.Message}");
                 if (ex.InnerException != null)
                 {
-                    Console.WriteLine($"内部错误: {ex.InnerException.Message}");
+                    Logger.Error($"内部错误: {ex.InnerException.Message}");
                 }
 
                 // 避免重复关闭已经关闭的监听器
@@ -185,7 +192,10 @@ namespace MXASRServer
                 _listener.Stop();
             }
 
-            Console.WriteLine("MXASR WebSocket服务器已停止");
+            Logger.Info("MXASR WebSocket服务器已停止");
+
+            // 关闭日志系统
+            Logger.Close();
         }
 
         /// <summary>
@@ -216,7 +226,7 @@ namespace MXASRServer
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"关闭客户端会话时出错: {ex.Message}");
+                    Logger.Error($"关闭客户端会话时出错: {ex.Message}");
                 }
             }
         }
@@ -253,11 +263,11 @@ namespace MXASRServer
 
                 _clientSessions.TryAdd(clientId, session);
 
-                Console.WriteLine($"客户端已连接: {clientId}");
+                Logger.Info($"客户端已连接: {clientId}");
 
                 // 连接到MXASR服务器
                 string status = await serverClient.ClientConnTest();
-                Console.WriteLine($"客户端 {clientId} 连接到MXASR服务器: {status}");
+                Logger.Info($"客户端 {clientId} 连接到MXASR服务器: {status}");
 
                 if (status == "WebSocket通信连接成功")
                 {
@@ -279,12 +289,12 @@ namespace MXASRServer
                                     true,
                                     sessionCts.Token);
 
-                                Console.WriteLine($"[{clientId}] 服务器 -> 客户端: {cleanedMessage}");
+                                Logger.Info($"[{clientId}] 服务器 -> 客户端: {cleanedMessage}");
                             }
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"[{clientId}] 处理服务器消息时出错: {ex.Message}");
+                            Logger.Error($"[{clientId}] 处理服务器消息时出错: {ex.Message}");
                         }
                     });
 
@@ -307,7 +317,7 @@ namespace MXASRServer
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"处理WebSocket请求时出错: {ex.Message}");
+                Logger.Error($"处理WebSocket请求时出错: {ex.Message}");
 
                 // 清理会话
                 if (session != null)
@@ -340,7 +350,7 @@ namespace MXASRServer
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"清理ASR消息时出错: {ex.Message}");
+                Logger.Error($"清理ASR消息时出错: {ex.Message}");
                 return message; // 出错时返回原始消息
             }
         }
@@ -391,7 +401,7 @@ namespace MXASRServer
                     {
                         // 文本消息
                         string message = Encoding.UTF8.GetString(receivedData);
-                        Console.WriteLine($"[{clientId}] 客户端 -> 服务器(文本): {message}");
+                        Logger.Info($"[{clientId}] 客户端 -> 服务器(文本): {message}");
 
                         // 处理控制消息
                         if (message.Contains("\"is_speaking\": true") || message.Contains("\"is_speaking\":true"))
@@ -401,29 +411,72 @@ namespace MXASRServer
                             session.IsReceivingAudio = true;
                             pendingAudioData.SetLength(0); // 清空临时缓冲区
                             isProcessingWavFile = false;
-                            Console.WriteLine($"[{clientId}] 开始接收新的音频流");
+                            Logger.Info($"[{clientId}] 开始接收新的音频流");
+
+                            // 存储开始消息但不立即发送
+                            session.StartMessage = message;
                         }
-                        else if (message.Contains("\"is_speaking\": false") || message.Contains("\"is_speaking\":false"))
+                        else if (message.Contains("\"is_speaking\": false") || message.Contains("\"is_speaking\":false") ||
+                                 message.Contains("\"is_final\": true") || message.Contains("\"is_final\":true"))
                         {
                             // 音频流结束，处理临时缓冲区中的数据
                             if (pendingAudioData.Length > 0)
                             {
-                                Console.WriteLine($"[{clientId}] 处理临时缓冲区中的音频数据: {pendingAudioData.Length} 字节");
-                                await ProcessAndSendAudioData(clientId, serverClient, pendingAudioData.ToArray());
+                                Logger.Info($"[{clientId}] 处理临时缓冲区中的音频数据: {pendingAudioData.Length} 字节");
+                                // 先处理音频数据但不立即发送
+                                byte[] processedData = await ProcessAudioData(clientId, pendingAudioData.ToArray());
+                                if (processedData != null && processedData.Length > 0)
+                                {
+                                    session.ProcessedAudioData = processedData;
+                                }
                                 pendingAudioData.SetLength(0);
                             }
 
                             // 如果之前设置了接收状态，处理累积的数据
                             if (session.IsReceivingAudio && session.AudioBuffer.Length > 0)
                             {
-                                Console.WriteLine($"[{clientId}] 音频接收完成，长度: {session.AudioBuffer.Length} 字节，开始处理...");
-                                await ProcessCompleteAudioData(clientId, session);
-                                session.IsReceivingAudio = false;
-                            }
-                        }
+                                Logger.Info($"[{clientId}] 音频接收完成，长度: {session.AudioBuffer.Length} 字节，开始处理...");
+                                // 获取完整的音频数据
+                                session.AudioBuffer.Position = 0; // 重置流位置到开始
+                                byte[] completeData = session.AudioBuffer.ToArray();
 
-                        // 发送文本消息
-                        serverClient.SendTextMessage(message);
+                                // 处理音频数据但不立即发送
+                                byte[] processedData = await ProcessAudioData(clientId, completeData);
+                                if (processedData != null && processedData.Length > 0)
+                                {
+                                    session.ProcessedAudioData = processedData;
+                                }
+                            }
+
+                            // 处理完所有音频数据后，按顺序发送消息和数据给ASR服务器
+                            if (!string.IsNullOrEmpty(session.StartMessage))
+                            {
+                                // 1. 首先发送起始控制消息
+                                Logger.Info($"[{clientId}] 发送起始控制消息到ASR服务器");
+                                serverClient.SendTextMessage(session.StartMessage);
+
+                                // 2. 发送处理后的音频数据
+                                if (session.ProcessedAudioData != null && session.ProcessedAudioData.Length > 0)
+                                {
+                                    Logger.Info($"[{clientId}] 发送处理后的音频数据到ASR服务器: {session.ProcessedAudioData.Length} 字节");
+                                    serverClient.SendBinaryData(session.ProcessedAudioData);
+                                }
+
+                                // 3. 最后发送结束控制消息
+                                Logger.Info($"[{clientId}] 发送结束控制消息到ASR服务器");
+                                serverClient.SendTextMessage(message);
+                            }
+
+                            // 重置会话状态
+                            session.IsReceivingAudio = false;
+                            session.StartMessage = null;
+                            session.ProcessedAudioData = null;
+                        }
+                        else
+                        {
+                            // 其他类型的文本消息，直接发送
+                            serverClient.SendTextMessage(message);
+                        }
                     }
                     else if (receiveResult.MessageType == WebSocketMessageType.Binary)
                     {
@@ -436,7 +489,7 @@ namespace MXASRServer
                         if (isWavData && !isProcessingWavFile)
                         {
                             isProcessingWavFile = true;
-                            Console.WriteLine($"[{clientId}] 自动检测到WAV文件头，开始收集音频数据");
+                            Logger.Info($"[{clientId}] 自动检测到WAV文件头，开始收集音频数据");
                             // 清空之前的数据
                             pendingAudioData.SetLength(0);
                         }
@@ -446,12 +499,13 @@ namespace MXASRServer
                         {
                             lastChunkTime = DateTime.Now;
                             pendingAudioData.Write(receivedData, 0, receivedData.Length);
-                            Console.WriteLine($"[{clientId}] 累积WAV数据: {receivedData.Length} 字节，总计: {pendingAudioData.Length} 字节");
+                            // 使用汇总日志记录累积的音频数据
+                            Logger.AudioChunk(clientId, receivedData.Length, pendingAudioData.Length);
 
                             // 检查是否接收完成（基于超时机制）
                             if ((DateTime.Now - lastChunkTime).TotalMilliseconds > inactivityTimeoutMs)
                             {
-                                Console.WriteLine($"[{clientId}] 检测到音频传输完成（超时），处理累积的WAV数据: {pendingAudioData.Length} 字节");
+                                Logger.Info($"[{clientId}] 检测到音频传输完成（超时），处理累积的WAV数据: {pendingAudioData.Length} 字节");
                                 if (pendingAudioData.Length > 0)
                                 {
                                     await ProcessAndSendAudioData(clientId, serverClient, pendingAudioData.ToArray());
@@ -469,28 +523,45 @@ namespace MXASRServer
                             session.AudioBuffer.Write(receivedData, 0, receivedData.Length);
                             session.LastAudioReceiveTime = DateTime.Now;
 
-                            Console.WriteLine($"[{clientId}] 接收到二进制数据: {receivedData.Length} 字节，累计: {session.AudioBuffer.Length} 字节");
+                            Logger.Info($"[{clientId}] 接收到二进制数据: {receivedData.Length} 字节，累计: {session.AudioBuffer.Length} 字节");
 
                             // 检查缓冲区是否过大，防止内存溢出
                             if (session.AudioBuffer.Length > 20 * 1024 * 1024) // 20MB限制
                             {
-                                Console.WriteLine($"[{clientId}] 音频缓冲区过大({session.AudioBuffer.Length}字节)，提前处理");
-                                await ProcessCompleteAudioData(clientId, session);
+                                Logger.Info($"[{clientId}] 音频缓冲区过大({session.AudioBuffer.Length}字节)，提前处理");
+                                // 获取完整的音频数据但不立即发送
+                                session.AudioBuffer.Position = 0;
+                                byte[] completeData = session.AudioBuffer.ToArray();
+                                byte[] processedData = await ProcessAudioData(clientId, completeData);
+                                if (processedData != null && processedData.Length > 0)
+                                {
+                                    session.ProcessedAudioData = processedData;
+                                }
                                 session.AudioBuffer.SetLength(0);
                             }
                         }
                         else
                         {
-                            // 直接发送模式（兼容现有协议）
-                            Console.WriteLine($"[{clientId}] 接收到二进制数据，直接发送: {receivedData.Length} 字节");
-                            serverClient.SendBinaryData(receivedData);
+                            // 这里修改为仅在没有启用顺序处理模式时才直接发送
+                            if (string.IsNullOrEmpty(session.StartMessage))
+                            {
+                                // 直接发送模式（兼容现有协议）
+                                Logger.Info($"[{clientId}] 接收到二进制数据，直接发送: {receivedData.Length} 字节");
+                                serverClient.SendBinaryData(receivedData);
+                            }
+                            else
+                            {
+                                // 否则将数据添加到缓冲区
+                                Logger.Info($"[{clientId}] 收到二进制数据但处于顺序模式，添加到缓冲区: {receivedData.Length} 字节");
+                                session.AudioBuffer.Write(receivedData, 0, receivedData.Length);
+                            }
                         }
                     }
 
                     // 检查WAV处理是否超时（在消息循环的每次迭代中）
                     if (isProcessingWavFile && (DateTime.Now - lastChunkTime).TotalMilliseconds > inactivityTimeoutMs)
                     {
-                        Console.WriteLine($"[{clientId}] 检测到音频传输完成（超时），处理累积的WAV数据: {pendingAudioData.Length} 字节");
+                        Logger.Info($"[{clientId}] 检测到音频传输完成（超时），处理累积的WAV数据: {pendingAudioData.Length} 字节");
                         if (pendingAudioData.Length > 0)
                         {
                             await ProcessAndSendAudioData(clientId, serverClient, pendingAudioData.ToArray());
@@ -502,22 +573,22 @@ namespace MXASRServer
             }
             catch (Exception ex) when (ex is TaskCanceledException || ex is OperationCanceledException)
             {
-                Console.WriteLine($"[{clientId}] 客户端消息处理任务已取消");
+                Logger.Info($"[{clientId}] 客户端消息处理任务已取消");
             }
             catch (Exception ex) when (ex is WebSocketException)
             {
-                Console.WriteLine($"[{clientId}] WebSocket连接出错: {ex.Message}");
+                Logger.Error($"[{clientId}] WebSocket连接出错: {ex.Message}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[{clientId}] 处理客户端消息时出错: {ex.Message}");
-                Console.WriteLine($"[{clientId}] 错误详情: {ex}");
+                Logger.Error($"[{clientId}] 处理客户端消息时出错: {ex.Message}");
+                Logger.Error($"[{clientId}] 错误详情: {ex}");
             }
             finally
             {
                 // 确保关闭会话
                 await CloseSession(clientId);
-                Console.WriteLine($"[{clientId}] 客户端会话已关闭");
+                Logger.Info($"[{clientId}] 客户端会话已关闭");
 
                 // 释放临时缓冲区
                 pendingAudioData.Dispose();
@@ -537,7 +608,7 @@ namespace MXASRServer
                 if (audioData.Length < 44)
                 {
                     // 数据太少，可能不是有效的WAV文件
-                    Console.WriteLine($"[{clientId}] 音频数据太短 ({audioData.Length} 字节)，不足以包含WAV头部(44字节)，直接发送原始数据");
+                    Logger.Info($"[{clientId}] 音频数据太短 ({audioData.Length} 字节)，不足以包含WAV头部(44字节)，直接发送原始数据");
                     client.SendBinaryData(audioData);
                     return;
                 }
@@ -546,7 +617,7 @@ namespace MXASRServer
                 if (audioData[0] == 0x52 && audioData[1] == 0x49 &&
                     audioData[2] == 0x46 && audioData[3] == 0x46)
                 {
-                    Console.WriteLine($"[{clientId}] 检测到WAV文件头: RIFF");
+                    Logger.Info($"[{clientId}] 检测到WAV文件头: RIFF");
 
                     try
                     {
@@ -554,84 +625,129 @@ namespace MXASRServer
                         byte[] sampleRateBytes = new byte[4];
                         Array.Copy(audioData, 24, sampleRateBytes, 0, 4);
                         int rawSampleRate = BitConverter.ToInt32(sampleRateBytes, 0);
-                        Console.WriteLine($"[{clientId}] 从WAV头部读取的原始采样率: {rawSampleRate} Hz");
+                        Logger.Info($"[{clientId}] 从WAV头部读取的原始采样率: {rawSampleRate} Hz");
 
                         int detectedSampleRate = AudioResampler.GetWavSampleRate(audioData);
-                        Console.WriteLine($"[{clientId}] AudioResampler检测到的采样率: {detectedSampleRate} Hz");
+                        Logger.Info($"[{clientId}] AudioResampler检测到的采样率: {detectedSampleRate} Hz");
 
                         if (detectedSampleRate != TargetSampleRate)
                         {
-                            Console.WriteLine($"[{clientId}] 检测到WAV数据采样率为 {detectedSampleRate}Hz，需要转换为 {TargetSampleRate}Hz");
+                            Logger.Info($"[{clientId}] 检测到WAV数据采样率为 {detectedSampleRate}Hz，需要转换为 {TargetSampleRate}Hz");
 
                             // 重采样完整数据
                             byte[] resampledData = AudioResampler.ResampleWavData(audioData, TargetSampleRate);
 
                             // 发送重采样后的数据
-                            Console.WriteLine($"[{clientId}] 重采样完成，原始大小: {audioData.Length} 字节, 重采样后: {resampledData.Length} 字节");
+                            Logger.Info($"[{clientId}] 重采样完成，原始大小: {audioData.Length} 字节, 重采样后: {resampledData.Length} 字节");
                             client.SendBinaryData(resampledData);
                             return;
                         }
                         else
                         {
-                            Console.WriteLine($"[{clientId}] WAV数据采样率已经是 {detectedSampleRate}Hz，无需转换");
+                            Logger.Info($"[{clientId}] WAV数据采样率已经是 {detectedSampleRate}Hz，无需转换");
                         }
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"[{clientId}] 检测或重采样WAV出错: {ex.Message}");
-                        Console.WriteLine($"[{clientId}] 错误详情: {ex}");
+                        Logger.Error($"[{clientId}] 检测或重采样WAV出错: {ex.Message}");
+                        Logger.Error($"[{clientId}] 错误详情: {ex}");
                     }
                 }
                 else
                 {
                     // 打印前8个字节，用于调试
                     string headerHex = BitConverter.ToString(audioData, 0, Math.Min(8, audioData.Length));
-                    Console.WriteLine($"[{clientId}] 数据头部不是WAV格式(RIFF): {headerHex}");
+                    Logger.Info($"[{clientId}] 数据头部不是WAV格式(RIFF): {headerHex}");
                 }
 
                 // 如果不需要重采样或不是WAV文件，直接发送原始数据
-                Console.WriteLine($"[{clientId}] 发送原始音频数据，长度: {audioData.Length} 字节");
+                Logger.Info($"[{clientId}] 发送原始音频数据，长度: {audioData.Length} 字节");
                 client.SendBinaryData(audioData);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[{clientId}] 处理音频数据时出错: {ex.Message}");
-                Console.WriteLine($"[{clientId}] 错误详情: {ex}");
+                Logger.Error($"[{clientId}] 处理音频数据时出错: {ex.Message}");
+                Logger.Error($"[{clientId}] 错误详情: {ex}");
 
                 // 出错时尝试发送原始数据
-                Console.WriteLine($"[{clientId}] 发送原始音频数据（错误恢复），长度: {audioData.Length} 字节");
+                Logger.Info($"[{clientId}] 发送原始音频数据（错误恢复），长度: {audioData.Length} 字节");
                 client.SendBinaryData(audioData);
             }
         }
 
         /// <summary>
-        /// 处理完整的音频数据
+        /// 只处理音频数据但不发送
         /// </summary>
         /// <param name="clientId">客户端ID</param>
-        /// <param name="session">客户端会话</param>
-        private async Task ProcessCompleteAudioData(string clientId, ClientSession session)
+        /// <param name="audioData">音频数据</param>
+        /// <returns>处理后的音频数据</returns>
+        private async Task<byte[]> ProcessAudioData(string clientId, byte[] audioData)
         {
             try
             {
-                // 获取完整的音频数据
-                session.AudioBuffer.Position = 0; // 重置流位置到开始
-                byte[] completeData = session.AudioBuffer.ToArray();
+                if (audioData.Length < 44)
+                {
+                    // 数据太少，可能不是有效的WAV文件
+                    Logger.Info($"[{clientId}] 音频数据太短 ({audioData.Length} 字节)，不足以包含WAV头部(44字节)");
+                    return audioData;
+                }
 
-                await ProcessAndSendAudioData(clientId, session.ServerClient, completeData);
+                // 检查是否是WAV文件
+                if (audioData[0] == 0x52 && audioData[1] == 0x49 &&
+                    audioData[2] == 0x46 && audioData[3] == 0x46)
+                {
+                    Logger.Info($"[{clientId}] 检测到WAV文件头: RIFF");
+
+                    try
+                    {
+                        // 尝试读取WAV头部中的采样率信息（字节24-27）
+                        byte[] sampleRateBytes = new byte[4];
+                        Array.Copy(audioData, 24, sampleRateBytes, 0, 4);
+                        int rawSampleRate = BitConverter.ToInt32(sampleRateBytes, 0);
+                        Logger.Info($"[{clientId}] 从WAV头部读取的原始采样率: {rawSampleRate} Hz");
+
+                        int detectedSampleRate = AudioResampler.GetWavSampleRate(audioData);
+                        Logger.Info($"[{clientId}] AudioResampler检测到的采样率: {detectedSampleRate} Hz");
+
+                        if (detectedSampleRate != TargetSampleRate)
+                        {
+                            Logger.Info($"[{clientId}] 检测到WAV数据采样率为 {detectedSampleRate}Hz，需要转换为 {TargetSampleRate}Hz");
+
+                            // 重采样完整数据
+                            byte[] resampledData = AudioResampler.ResampleWavData(audioData, TargetSampleRate);
+
+                            // 返回重采样后的数据
+                            Logger.Info($"[{clientId}] 重采样完成，原始大小: {audioData.Length} 字节, 重采样后: {resampledData.Length} 字节");
+                            return resampledData;
+                        }
+                        else
+                        {
+                            Logger.Info($"[{clientId}] WAV数据采样率已经是 {detectedSampleRate}Hz，无需转换");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"[{clientId}] 检测或重采样WAV出错: {ex.Message}");
+                        Logger.Error($"[{clientId}] 错误详情: {ex}");
+                    }
+                }
+                else
+                {
+                    // 打印前8个字节，用于调试
+                    string headerHex = BitConverter.ToString(audioData, 0, Math.Min(8, audioData.Length));
+                    Logger.Info($"[{clientId}] 数据头部不是WAV格式(RIFF): {headerHex}");
+                }
+
+                // 如果不需要重采样或不是WAV文件，返回原始数据
+                return audioData;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[{clientId}] 处理完整音频数据时出错: {ex.Message}");
-                Console.WriteLine($"[{clientId}] 错误详情: {ex}");
+                Logger.Error($"[{clientId}] 处理音频数据时出错: {ex.Message}");
+                Logger.Error($"[{clientId}] 错误详情: {ex}");
 
-                // 出错时尝试发送原始数据
-                if (session.AudioBuffer.Length > 0)
-                {
-                    session.AudioBuffer.Position = 0; // 重置流位置到开始
-                    byte[] originalData = session.AudioBuffer.ToArray();
-                    Console.WriteLine($"[{clientId}] 发送原始音频数据（错误恢复），长度: {originalData.Length} 字节");
-                    session.ServerClient.SendBinaryData(originalData);
-                }
+                // 出错时返回原始数据
+                return audioData;
             }
         }
     }
