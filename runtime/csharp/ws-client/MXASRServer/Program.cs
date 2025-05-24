@@ -12,8 +12,8 @@ namespace MXASRServer
             Console.WriteLine("----------------------------");
 
             string host = "0.0.0.0";   // 监听所有网络接口
-            int port = 9095;         // 默认端口
-            string targetUrl = "ws://124.223.76.169:10095/";  // 默认目标服务器
+            int port = 9096;         // 默认端口
+            string targetUrl = "ws://124.223.76.169:10096/";  // 默认目标服务器
 
             // 创建取消令牌源
             using var cts = new CancellationTokenSource();
